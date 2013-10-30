@@ -1,3 +1,5 @@
+from scrapy import signals
+from scrapy.contrib.exporter import JsonItemExporter
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from ksl.items import KslItem
@@ -10,16 +12,39 @@ class KslSpider(BaseSpider):
 	]
 
 	def parse(self, response):
-		filename = response.url.split("/")[-2]
+
+		# Get the JSON file initialized
+		resultFile = open('results.json', 'w+b')
+		exporter = JsonItemExporter(resultFile)
+		exporter.start_exporting()
+
+		# Initialize the HTML node selector thingy
 		hxs = HtmlXPathSelector(response)
+
+		# Grab all the vehicles listed on the page, they
+		# should have the class "srp-listing-body" set
 		vehicles = hxs.select('//div[@class="srp-listing-body"]')
-		items = []
+
 		for vehicle in vehicles:
+
+			# Instantiate a new KslItem
 			item = KslItem()
-			item['title'] = vehicle.select('div[@class="srp-listing-body-right"]/div[@class="srp-listing-title"]/a/text()').extract()
-			link = vehicle.select('div[@class="srp-listing-body-right"]/div[@class="srp-listing-title"]/a/@href')
-			item['link'] = link.extract()
-			item['vid'] = link.select('string()').extract();
-			items.append(item)
-		return items
-		# open(filename, 'wb').write(response.body)
+
+			# Grab the link from the listing
+			link = vehicle.select('div[@class="srp-listing-body-right"]/div[@class="srp-listing-title"]/a/@href').extract()[0]
+
+			# Extract the Vehicle ID from the link.
+			# Should be the number between the last / and the first ?
+			item['vid'] = link[link.rfind('/') + 1:link.find('?')]
+
+			# Assemble vehicle page URL
+			vurl = 'http://www.ksl.com/auto/listing/' + item['vid']
+
+			# Crawl the vehicle page here...
+
+			# Export the item to the JSON file
+			exporter.export_item(item)
+
+		# Finish exporting and close the JSON file
+		exporter.finish_exporting()
+		resultFile.close()

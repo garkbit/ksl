@@ -7,6 +7,3 @@ from scrapy.item import Item, Field
 
 class KslItem(Item):
     vid = Field()
-    title = Field()
-    link = Field()
-    # desc = Field()
