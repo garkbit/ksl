@@ -10,6 +10,10 @@ BOT_NAME = 'ksl'
 
 SPIDER_MODULES = ['ksl.spiders']
 NEWSPIDER_MODULE = 'ksl.spiders'
+ITEM_PIPELINES = {
+	'ksl.pipelines.MySQLPipeline': 500
+}
+DOWNLOAD_DELAY = 0.25
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'ksl (+http://www.yourdomain.com)'
