@@ -39,8 +39,6 @@ class KslSpider(BaseSpider):
 
 			yield Request(url, callback=self.vehicle)
 
-		yield Request('http://www.ksl.com/auto/search/index', callback=self.parse)
-
 	def vehicle(self, response):
 		hxs = HtmlXPathSelector(response)
 		item = KslItem()
@@ -57,7 +55,17 @@ class KslSpider(BaseSpider):
 		item['model'] = hxs.select('//*[@id="specificationsTable"]/tr[3]/td[2]/text()').extract()[0]
 		item['trim'] = hxs.select('//*[@id="specificationsTable"]/tr[4]/td[2]/text()').extract()[0]
 		item['body'] = hxs.select('//*[@id="specificationsTable"]/tr[5]/td[2]/text()').extract()[0]
-		item['mileage'] = hxs.select('//*[@id="specificationsTable"]/tr[6]/td[2]/text()').extract()[0]
+
+		mileage = hxs.select('//*[@id="specificationsTable"]/tr[6]/td[2]/text()').extract()[0]
+		mileage = p_regex.sub('', mileage)
+		try:
+			int(mileage)
+			age = datetime.date.today().year - int(item['year'])
+			if (age > 0 and len(item['year']) < 4):
+				mileage = mileage * 1000
+		except ValueError:
+			pass
+		item['mileage'] = mileage
 
 		# VIN numbers are sometimes provided as links, try to get it as plaintext first,
 		# and if that fails, try to grab it from a link
